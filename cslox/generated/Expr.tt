@@ -1,0 +1,63 @@
+﻿<#@ assembly name="System.Core" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+// generated from Expr.tt
+
+namespace cslox
+{
+<# DefineAst("Expr", File.ReadAllLines("cslox/definitions/Expr.txt")); #>
+}
+<#+
+    void DefineType(string baseName, string className, string fieldList)
+    {
+#>
+
+    internal class <#= className #> : <#= baseName #>
+    {
+        <#= string.Join("\r\n        ", fieldList.Split(',').Select(s => "internal readonly " + s.Trim() + ";")) #>
+
+        internal <#= className #>(<#= string.Join(", ", fieldList.Split(',')) #>)
+        {
+            <#= string.Join("\r\n            ", fieldList.Split(',').Select(s=>s.Trim().Split(' ')[1]).Select(s => "this." + s + " = " + s + ";")) #>
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.Visit<#= className + baseName #>(this);
+        }
+    }
+<#+
+    }
+
+    void DefineAst(string baseName, string[] types)
+    {
+#>
+    internal interface IVisitor<T>
+    {
+<#+
+        for (int i = 0; i < types.Length; i++)
+        {
+            if (types[i].Length > 0)
+            {
+#>
+        <#= "T Visit" + types[i].Split(':')[0].Trim() + baseName + "(" + types[i].Split(':')[0].Trim() + " "+ baseName.ToLower() + ");" #>
+<#+
+            }
+        }
+#>
+    }
+
+    internal abstract class Expr
+    {
+        internal abstract T Accept<T>(IVisitor<T> visitor);
+    }
+<#+
+        for (int i = 0; i < types.Length; i++)
+        {
+            if (types[i].Length > 0)
+            {
+                DefineType(baseName, types[i].Split(':')[0].Trim(), types[i].Split(':')[1].Trim());
+            }
+        }
+    }
+#>
