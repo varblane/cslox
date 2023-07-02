@@ -22,7 +22,7 @@ namespace cslox
     {
         <#= string.Join("\r\n        ", fieldList.Split(',').Select(s => "internal readonly " + s.Trim() + ";")) #>
 
-        internal <#= className #>(<#= string.Join(", ", fieldList.Split(',')) #>)
+        internal <#= className #>(<#= string.Join(", ", fieldList.Split(',').Select(s => s.Trim())) #>)
         {
             <#= string.Join("\r\n            ", fieldList.Split(',').Select(s=>s.Trim().Split(' ')[1]).Select(s => "this." + s + " = " + s + ";")) #>
         }
