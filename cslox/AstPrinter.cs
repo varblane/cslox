@@ -2,7 +2,7 @@
 
 namespace cslox
 {
-    internal class AstPrinter : IVisitor<string>
+    internal class AstPrinter : IExprVisitor<string>
     {
         internal string Print(Expr expr)
         {
@@ -27,6 +27,16 @@ namespace cslox
         public string VisitUnaryExpr(Unary expr)
         {
             return Parenthesize(expr.op.lexeme, expr.right);
+        }
+
+        public string VisitVariableExpr(Variable expr)
+        {
+            return Parenthesize(expr.name.lexeme);
+        }
+
+        public string VisitAssignExpr(Assign expr)
+        {
+            return Parenthesize(expr.name.lexeme);
         }
 
         private string Parenthesize(string name, params Expr[] exprs)

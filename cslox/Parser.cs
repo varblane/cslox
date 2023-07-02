@@ -10,22 +10,94 @@
             this.tokens = tokens;
         }
 
-        internal Expr? Parse()
+        internal List<Stmt?> Parse()
+        {
+            var statements = new List<Stmt?>();
+            while (!IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+            return statements;
+        }
+
+        private Stmt? Declaration()
         {
             try
             {
-                return Expression();
+                if (Match(TokenType.VAR)) return VarDeclaration();
+                return Statement();
             }
             catch (ParseException)
             {
+                Synchronize();
                 return null;
             }
         }
 
+        private Stmt VarDeclaration()
+        {
+            var name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+            Expr? initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new Var(name, initializer);
+        }
+
+        private Stmt Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.LEFT_BRACE)) return new Block(BlockStatement());
+            return ExpressionStatement();
+        }
+
+        private List<Stmt?> BlockStatement()
+        {
+            var statements = new List<Stmt?>();
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
+        private Stmt PrintStatement()
+        {
+            var value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+            return new Print(value);
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            var expression = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            return new Expression(expression);
+        }
 
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        private Expr Assignment()
+        {
+            var expr = Equality();
+            if (Match(TokenType.EQUAL))
+            {
+                var equals = Previous();
+                var value = Assignment();
+                if (expr.GetType() == typeof(Variable))
+                {
+                    var name = ((Variable)expr).name;
+                    return new Assign(name, value);
+                }
+                Error(equals, "Invalid assignemt target.");
+            }
+            return expr;
         }
 
         private Expr Equality()
@@ -93,6 +165,7 @@
             if (Match(TokenType.TRUE)) return new Literal(true);
             if (Match(TokenType.NIL)) return new Literal(null);
             if (Match(TokenType.NUMBER, TokenType.STRING)) return new Literal(Previous().literal);
+            if (Match(TokenType.IDENTIFIER)) return new Variable(Previous());
             if (Match(TokenType.LEFT_PAREN))
             {
                 var expr = Expression();

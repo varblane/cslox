@@ -1,18 +1,30 @@
 ﻿namespace cslox
 {
-    internal class Interpreter : IVisitor<object?>
+    internal class Interpreter : IExprVisitor<object?>, IStmtVisitor<object?>
     {
-        internal void Interpret(Expr expression)
+        private Environment environment = new();
+
+        internal void Interpret(List<Stmt?> statements)
         {
             try
             {
-                var value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach (var statement in statements)
+                {
+                    if (statement != null)
+                    {
+                        Execute(statement);
+                    }
+                }
             }
             catch (RuntimeError e)
             {
                 Lox.RuntimeError(e);
             }
+        }
+
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
         }
 
         private static string Stringify(object? obj)
@@ -91,6 +103,18 @@
             return null;
         }
 
+        public object? VisitVariableExpr(Variable expr)
+        {
+            return environment.Get(expr.name);
+        }
+
+        public object? VisitAssignExpr(Assign expr)
+        {
+            var value = Evaluate(expr.value);
+            environment.Assign(expr.name, value);
+            return value;
+        }
+
         private static bool IsEqual(object a, object b)
         {
             if (a == null && b == null) return true;
@@ -120,6 +144,56 @@
         {
             if (left.GetType() == typeof(double) && right.GetType() == typeof(double)) return;
             throw new RuntimeError(op, "Operands must be numbers.");
+        }
+
+        public object? VisitExpressionStmt(Expression stmt)
+        {
+            Evaluate(stmt.expression);
+            return null;
+        }
+
+        public object? VisitPrintStmt(Print stmt)
+        {
+            var value = Evaluate(stmt.expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        public object? VisitVarStmt(Var stmt)
+        {
+            object? value = null;
+            if (stmt.initializer != null)
+            {
+                value = Evaluate(stmt.initializer);
+            }
+            environment.Define(stmt.name.lexeme, value);
+            return null;
+        }
+
+        public object? VisitBlockStmt(Block stmt)
+        {
+            ExecuteBlock(stmt.statements, new Environment(environment));
+            return null;
+        }
+
+        private void ExecuteBlock(List<Stmt?> statements, Environment environment)
+        {
+            var previous = this.environment;
+            try
+            {
+                this.environment = environment;
+                foreach (var statement in statements)
+                {
+                    if (statement != null)
+                    {
+                        Execute(statement);
+                    }
+                }
+            }
+            finally
+            {
+                this.environment = previous;
+            }
         }
     }
 }

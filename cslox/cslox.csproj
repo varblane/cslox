@@ -20,6 +20,10 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Expr.cs</LastGenOutput>
     </None>
+    <None Update="generated\Stmt.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Stmt.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +35,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Expr.tt</DependentUpon>
+    </Compile>
+    <Compile Update="generated\Stmt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Stmt.tt</DependentUpon>
     </Compile>
   </ItemGroup>
 

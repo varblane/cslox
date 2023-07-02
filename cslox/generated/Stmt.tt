@@ -1,0 +1,2 @@
+﻿<# GenerateAst("Stmt"); #>
+<#@ include file="Ast.t4"#>

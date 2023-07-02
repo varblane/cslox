@@ -11,13 +11,13 @@
             if (args.Length > 1)
             {
                 Console.WriteLine("Usage: cslox [script]");
-                Environment.Exit(64);
+                System.Environment.Exit(64);
             }
             else if (args.Length == 1)
             {
                 RunFile(args[0]);
-                if (hadError) Environment.Exit(65);
-                if (hadRuntimeError) Environment.Exit(70);
+                if (hadError) System.Environment.Exit(65);
+                if (hadRuntimeError) System.Environment.Exit(70);
             }
             else
             {
@@ -47,11 +47,11 @@
             var scanner = new Scanner(source);
             var tokens = scanner.ScanTokens();
             var parser = new Parser(tokens);
-            var expression = parser.Parse();
+            var statements = parser.Parse();
 
-            if (hadError || expression == null) return;
+            if (hadError || statements == null) return;
 
-            interpreter.Interpret(expression);
+            interpreter.Interpret(statements);
         }
 
         internal static void Error(int line, string message)
