@@ -43,16 +43,29 @@
         {
             var scanner = new Scanner(source);
             var tokens = scanner.ScanTokens();
+            var parser = new Parser(tokens);
+            var expression = parser.Parse();
 
-            foreach (var token in tokens)
-            {
-                Console.WriteLine(token);
-            }
+            if (hadError || expression == null) return;
+
+            Console.WriteLine(new AstPrinter().Print(expression));
         }
 
         internal static void Error(int line, string message)
         {
             Report(line, "", message);
+        }
+
+        internal static void Error(Token token, string message)
+        {
+            if (token.type == TokenType.EOF)
+            {
+                Report(token.line, " at end", message);
+            }
+            else
+            {
+                Report(token.line, " at '" + token.lexeme + "'", message);
+            }
         }
 
         private static void Report(int line, string where, string message)
