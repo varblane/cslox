@@ -2,7 +2,15 @@
 {
     internal class Interpreter : IExprVisitor<object?>, IStmtVisitor<object?>
     {
-        private Environment environment = new();
+        internal readonly Environment globals;
+        private Environment environment;
+
+        internal Interpreter()
+        {
+            globals = new();
+            environment = globals;
+            globals.Define("clock", new Clock());
+        }
 
         internal void Interpret(List<Stmt?> statements)
         {
@@ -117,6 +125,26 @@
             return null;
         }
 
+        public object? VisitCallExpr(Call expr)
+        {
+            var callee = Evaluate(expr.callee);
+            var arguments = new List<object?>();
+            foreach (var argument in expr.arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+            if (callee is not ICallable)
+            {
+                throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+            }
+            var function = (ICallable)callee;
+            if (arguments.Count != function.Arity())
+            {
+                throw new RuntimeError(expr.paren, "Expected " + function.Arity() + " arguments but got " + arguments.Count + ".");
+            }
+            return function.Call(this, arguments);
+        }
+
         public object? VisitVariableExpr(Variable expr)
         {
             return environment.Get(expr.name);
@@ -212,7 +240,21 @@
             return null;
         }
 
-        private void ExecuteBlock(List<Stmt?> statements, Environment environment)
+        public object? VisitFunctionStmt(Function stmt)
+        {
+            var function = new LoxFunction(stmt, environment);
+            environment.Define(stmt.name.lexeme, function);
+            return null;
+        }
+
+        public object? VisitReturnStmt(Return stmt)
+        {
+            object? value = null;
+            if (stmt.value != null) value = Evaluate(stmt.value);
+            throw new ReturnException(value);
+        }
+
+        internal void ExecuteBlock(List<Stmt?> statements, Environment environment)
         {
             var previous = this.environment;
             try

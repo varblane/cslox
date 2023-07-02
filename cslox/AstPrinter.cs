@@ -44,6 +44,11 @@ namespace cslox
             return Parenthesize(expr.name.lexeme);
         }
 
+        public string VisitCallExpr(Call expr)
+        {
+            return Parenthesize("call");
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             var builder = new StringBuilder();

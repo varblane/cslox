@@ -18,6 +18,10 @@
     "cslox 3": {
       "commandName": "Project",
       "commandLineArgs": "./../../../input/3.txt"
+    },
+    "cslox 4": {
+      "commandName": "Project",
+      "commandLineArgs": "./../../../input/4.txt"
     }
   }
 }
