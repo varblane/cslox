@@ -158,7 +158,7 @@
             {
                 var equals = Previous();
                 var value = Assignment();
-                if (expr.GetType() == typeof(Variable))
+                if (expr is Variable)
                 {
                     var name = ((Variable)expr).name;
                     return new Assign(name, value);

@@ -40,11 +40,11 @@
             switch (expr.op.type)
             {
                 case TokenType.PLUS:
-                    if (left.GetType() == typeof(double) && right.GetType() == typeof(double))
+                    if (left is double && right is double)
                     {
                         return (double)left + (double)right;
                     }
-                    if (left.GetType() == typeof(string) && right.GetType() == typeof(string))
+                    if (left is string && right is string)
                     {
                         return (string)left + (string)right;
                     }
@@ -139,7 +139,7 @@
         private static bool IsTruthy(object? obj)
         {
             if (obj == null) return false;
-            if (obj.GetType() == typeof(bool)) return (bool)obj;
+            if (obj is bool) return (bool)obj;
             return true;
         }
 
@@ -150,13 +150,13 @@
 
         private static void CheckNumberOperand(Token op, object operand)
         {
-            if (operand.GetType() == typeof(double)) return;
+            if (operand is double) return;
             throw new RuntimeError(op, "Operand must be a number.");
         }
 
         private static void CheckNumberOperands(Token op, object left, object right)
         {
-            if (left.GetType() == typeof(double) && right.GetType() == typeof(double)) return;
+            if (left is double && right is double) return;
             throw new RuntimeError(op, "Operands must be numbers.");
         }
 
