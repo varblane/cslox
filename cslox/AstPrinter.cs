@@ -14,6 +14,11 @@ namespace cslox
             return Parenthesize(expr.op.lexeme, expr.left, expr.right);
         }
 
+        public string VisitLogicalExpr(Logical expr)
+        {
+            return Parenthesize(expr.op.lexeme, expr.left, expr.right);
+        }
+
         public string VisitGroupingExpr(Grouping expr)
         {
             return Parenthesize("group", expr.expression);

@@ -78,6 +78,20 @@
             return null;
         }
 
+        public object? VisitLogicalExpr(Logical expr)
+        {
+            var left = Evaluate(expr.left);
+            if (expr.op.type == TokenType.OR)
+            {
+                if (IsTruthy(left)) return left;
+            }
+            else
+            {
+                if (!IsTruthy(left)) return left;
+            }
+            return Evaluate(expr.right);
+        }
+
         public object? VisitGroupingExpr(Grouping expr)
         {
             return Evaluate(expr.expression);
@@ -173,6 +187,28 @@
         public object? VisitBlockStmt(Block stmt)
         {
             ExecuteBlock(stmt.statements, new Environment(environment));
+            return null;
+        }
+
+        public object? VisitIfStmt(If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.thenBranch);
+            }
+            else if (stmt.elseBranch != null)
+            {
+                Execute(stmt.elseBranch);
+            }
+            return null;
+        }
+
+        public object? VisitWhileStmt(While stmt)
+        {
+            while (IsTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.body);
+            }
             return null;
         }
 

@@ -48,9 +48,77 @@
 
         private Stmt Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
+            if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Block(BlockStatement());
             return ExpressionStatement();
+        }
+
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+            Stmt? initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null;
+            }
+            else if (Match(TokenType.VAR))
+            {
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+            Expr? condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+            Expr? increment = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                increment = Expression();
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+            var body = Statement();
+            if (increment != null)
+            {
+                body = new Block(new List<Stmt?>() { body, new Expression(increment) });
+            }
+            if (condition == null) condition = new Literal(true);
+            body = new While(condition, body);
+            if (initializer != null)
+            {
+                body = new Block(new List<Stmt?>() { initializer, body });
+            }
+            return body;
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            var condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+            var body = Statement();
+            return new While(condition, body);
+        }
+
+        private Stmt IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            var condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+            var thenBranch = Statement();
+            Stmt? elseBranch = null;
+            if (Match(TokenType.ELSE))
+            {
+                elseBranch = Statement();
+            }
+            return new If(condition, thenBranch, elseBranch);
         }
 
         private List<Stmt?> BlockStatement()
@@ -85,7 +153,7 @@
 
         private Expr Assignment()
         {
-            var expr = Equality();
+            var expr = Or();
             if (Match(TokenType.EQUAL))
             {
                 var equals = Previous();
@@ -96,6 +164,30 @@
                     return new Assign(name, value);
                 }
                 Error(equals, "Invalid assignemt target.");
+            }
+            return expr;
+        }
+
+        private Expr Or()
+        {
+            var expr = And();
+            while (Match(TokenType.OR))
+            {
+                var op = Previous();
+                var right = And();
+                expr = new Logical(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr And()
+        {
+            var expr = Equality();
+            while (Match(TokenType.AND))
+            {
+                var op = Previous();
+                var right = Equality();
+                expr = new Logical(expr, op, right);
             }
             return expr;
         }
