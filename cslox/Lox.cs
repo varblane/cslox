@@ -80,7 +80,7 @@
 
         private static void Report(int line, string where, string message)
         {
-            Console.WriteLine($"[line {line}] Error {where}: {message}");
+            Console.WriteLine($"[line {line}] Error{where}: {message}");
             hadError = true;
         }
     }
