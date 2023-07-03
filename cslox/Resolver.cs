@@ -4,6 +4,7 @@
     {
         private readonly Interpreter interpreter;
         private readonly Stack<Dictionary<string, bool>> scopes = new();
+        private FunctionType currentFunction = FunctionType.None;
 
         internal Resolver(Interpreter interpreter)
         {
@@ -50,8 +51,10 @@
             }
         }
 
-        private void ResolveFuntion(Function function)
+        private void ResolveFuntion(Function function, FunctionType type)
         {
+            var enclosingFunction = currentFunction;
+            currentFunction = type;
             BeginScope();
             foreach (var token in function.pars)
             {
@@ -60,12 +63,17 @@
             }
             Resolve(function.body);
             EndScope();
+            currentFunction = enclosingFunction;
         }
 
         private void Declare(Token name)
         {
             if (scopes.Count == 0) return;
             var scope = scopes.Peek();
+            if (scope.ContainsKey(name.lexeme))
+            {
+                Lox.Error(name, "Already a variable with this name in this scope.");
+            }
             if (scope.ContainsKey(name.lexeme))
             {
                 scope[name.lexeme] = false;
@@ -132,7 +140,7 @@
         {
             Declare(stmt.name);
             Define(stmt.name);
-            ResolveFuntion(stmt);
+            ResolveFuntion(stmt, FunctionType.Function);
             return null;
         }
 
@@ -170,6 +178,10 @@
 
         public object? VisitReturnStmt(Return stmt)
         {
+            if (currentFunction == FunctionType.None)
+            {
+                Lox.Error(stmt.keyword, "Can't return from top-level code.");
+            }
             if (stmt.value != null)
             {
                 Resolve(stmt.value);
@@ -211,4 +223,11 @@
             return null;
         }
     }
+
+    internal enum FunctionType
+    {
+        None,
+        Function,
+    }
+
 }
