@@ -51,5 +51,31 @@
             if (enclosing != null) return enclosing.Get(name);
             throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
         }
+
+        internal object? GetAt(int distance, string name)
+        {
+            var ancestor = Ancestor(distance);
+            if (ancestor != null && ancestor.values.ContainsKey(name))
+            {
+                return ancestor.values[name];
+            }
+            return null;
+        }
+
+        internal void AssignAt(int distance, Token name, object? value)
+        {
+            var ancestor = Ancestor(distance);
+            if (ancestor != null) ancestor.values[name.lexeme] = value;
+        }
+
+        private Environment? Ancestor(int distance)
+        {
+            var environment = this;
+            for (int i = 0; i < distance; i++)
+            {
+                environment = environment?.enclosing;
+            }
+            return environment;
+        }
     }
 }

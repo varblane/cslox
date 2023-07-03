@@ -51,6 +51,9 @@
 
             if (hadError || statements == null) return;
 
+            var resolver = new Resolver(interpreter);
+            resolver.Resolve(statements);
+
             interpreter.Interpret(statements);
         }
 

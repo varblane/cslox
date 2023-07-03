@@ -4,10 +4,12 @@
     {
         internal readonly Environment globals;
         private Environment environment;
+        private readonly Dictionary<Expr, int> locals;
 
         internal Interpreter()
         {
             globals = new();
+            locals = new();
             environment = globals;
             globals.Define("clock", new Clock());
         }
@@ -33,6 +35,20 @@
         private void Execute(Stmt stmt)
         {
             stmt.Accept(this);
+        }
+
+        internal void Resolve(Expr expr, int depth)
+        {
+            locals.Add(expr, depth);
+        }
+
+        private object? LookUpvariable(Token name, Expr expr)
+        {
+            if (locals.TryGetValue(expr, out var distance))
+            {
+                return environment.GetAt(distance, name.lexeme);
+            }
+            return globals.Get(name);
         }
 
         private static string Stringify(object? obj)
@@ -147,13 +163,20 @@
 
         public object? VisitVariableExpr(Variable expr)
         {
-            return environment.Get(expr.name);
+            return LookUpvariable(expr.name, expr);
         }
 
         public object? VisitAssignExpr(Assign expr)
         {
             var value = Evaluate(expr.value);
-            environment.Assign(expr.name, value);
+            if (locals.TryGetValue(expr, out var distance))
+            {
+                environment.AssignAt(distance, expr.name, value);
+            }
+            else
+            {
+                globals.Assign(expr.name, value);
+            }
             return value;
         }
 
