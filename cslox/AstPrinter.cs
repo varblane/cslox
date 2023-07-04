@@ -61,5 +61,20 @@ namespace cslox
             builder.Append(')');
             return builder.ToString();
         }
+
+        public string VisitGetExpr(Get expr)
+        {
+            return Parenthesize("get", expr.obj);
+        }
+
+        public string VisitSetExpr(Set expr)
+        {
+            return Parenthesize("set", expr.obj, expr.value);
+        }
+
+        public string VisitThisExpr(This expr)
+        {
+            return Parenthesize("this");
+        }
     }
 }

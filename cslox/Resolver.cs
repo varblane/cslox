@@ -5,6 +5,7 @@
         private readonly Interpreter interpreter;
         private readonly Stack<Dictionary<string, bool>> scopes = new();
         private FunctionType currentFunction = FunctionType.None;
+        private ClassType currentClass = ClassType.None;
 
         internal Resolver(Interpreter interpreter)
         {
@@ -184,6 +185,10 @@
             }
             if (stmt.value != null)
             {
+                if (currentFunction != FunctionType.Initializer)
+                {
+                    Lox.Error(stmt.keyword, "Can't return a value from an initializer.");
+                }
                 Resolve(stmt.value);
             }
             return null;
@@ -205,6 +210,30 @@
             return null;
         }
 
+        public object? VisitGetExpr(Get expr)
+        {
+            Resolve(expr.obj);
+            return null;
+        }
+
+        public object? VisitSetExpr(Set expr)
+        {
+            Resolve(expr.value);
+            Resolve(expr.obj);
+            return null;
+        }
+
+        public object? VisitThisExpr(This expr)
+        {
+            if (currentClass == ClassType.None)
+            {
+                Lox.Error(expr.keyword, "Can't use 'this' outside of a class.");
+                return null;
+            }
+            ResolveLocal(expr, expr.keyword);
+            return null;
+        }
+
         public object? VisitVarStmt(Var stmt)
         {
             Declare(stmt.name);
@@ -222,12 +251,42 @@
             Resolve(stmt.body);
             return null;
         }
+
+        public object? VisitClassStmt(Class stmt)
+        {
+            var enclosingClass = currentClass;
+            currentClass = ClassType.Class;
+            Declare(stmt.name);
+            Define(stmt.name);
+            BeginScope();
+            scopes.Peek().Add("this", true);
+            foreach (var method in stmt.methods)
+            {
+                var declaration = FunctionType.Method;
+                if (method.name.lexeme.Equals("init"))
+                {
+                    declaration = FunctionType.Initializer;
+                }
+                ResolveFuntion(method, declaration);
+            }
+            EndScope();
+            currentClass = enclosingClass;
+            return null;
+        }
     }
 
     internal enum FunctionType
     {
         None,
         Function,
+        Initializer,
+        Method,
+    }
+
+    internal enum ClassType
+    {
+        None,
+        Class,
     }
 
 }

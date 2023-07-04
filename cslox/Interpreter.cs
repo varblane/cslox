@@ -180,6 +180,33 @@
             return value;
         }
 
+        public object? VisitGetExpr(Get expr)
+        {
+            var obj = Evaluate(expr.obj);
+            if (obj is LoxInstance)
+            {
+                return ((LoxInstance)obj).Get(expr.name);
+            }
+            throw new RuntimeError(expr.name, "Only instances have properties.");
+        }
+
+        public object? VisitSetExpr(Set expr)
+        {
+            var obj = Evaluate(expr.obj);
+            if (obj is not LoxInstance)
+            {
+                throw new RuntimeError(expr.name, "Only instances have fields.");
+            }
+            var value = Evaluate(expr.value);
+            ((LoxInstance)obj).Set(expr.name, value);
+            return value;
+        }
+
+        public object? VisitThisExpr(This expr)
+        {
+            return LookUpvariable(expr.keyword, expr);
+        }
+
         private static bool IsEqual(object a, object b)
         {
             if (a == null && b == null) return true;
@@ -265,7 +292,7 @@
 
         public object? VisitFunctionStmt(Function stmt)
         {
-            var function = new LoxFunction(stmt, environment);
+            var function = new LoxFunction(stmt, environment, false);
             environment.Define(stmt.name.lexeme, function);
             return null;
         }
@@ -275,6 +302,27 @@
             object? value = null;
             if (stmt.value != null) value = Evaluate(stmt.value);
             throw new ReturnException(value);
+        }
+
+        public object? VisitClassStmt(Class stmt)
+        {
+            environment.Define(stmt.name.lexeme, null);
+            var methods = new Dictionary<string, LoxFunction>();
+            foreach (var method in stmt.methods)
+            {
+                var function = new LoxFunction(method, environment, method.name.lexeme.Equals("init"));
+                if (methods.ContainsKey(method.name.lexeme))
+                {
+                    methods[method.name.lexeme] = function;
+                }
+                else
+                {
+                    methods.Add(method.name.lexeme, function);
+                }
+            }
+            var klass = new LoxClass(stmt.name.lexeme, methods);
+            environment.Assign(stmt.name, klass);
+            return null;
         }
 
         internal void ExecuteBlock(List<Stmt?> statements, Environment environment)

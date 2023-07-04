@@ -24,6 +24,7 @@
         {
             try
             {
+                if (Match(TokenType.CLASS)) return ClassDeclaration();
                 if (Match(TokenType.FUN)) return Function("function");
                 if (Match(TokenType.VAR)) return VarDeclaration();
                 return Statement();
@@ -33,6 +34,19 @@
                 Synchronize();
                 return null;
             }
+        }
+
+        private Stmt ClassDeclaration()
+        {
+            var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+            var methods = new List<Function>();
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                methods.Add(Function("method"));
+            }
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+            return new Class(name, methods);
         }
 
         private Function Function(string kind)
@@ -199,6 +213,11 @@
                     var name = ((Variable)expr).name;
                     return new Assign(name, value);
                 }
+                else if (expr is Get)
+                {
+                    var get = (Get)expr;
+                    return new Set(get.obj, get.name, value);
+                }
                 Error(equals, "Invalid assignemt target.");
             }
             return expr;
@@ -296,6 +315,11 @@
                 {
                     expr = FinishCall(expr);
                 }
+                else if (Match(TokenType.DOT))
+                {
+                    var name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                    expr = new Get(expr, name);
+                }
                 else
                 {
                     break;
@@ -328,6 +352,7 @@
             if (Match(TokenType.TRUE)) return new Literal(true);
             if (Match(TokenType.NIL)) return new Literal(null);
             if (Match(TokenType.NUMBER, TokenType.STRING)) return new Literal(Previous().literal);
+            if (Match(TokenType.THIS)) return new This(Previous());
             if (Match(TokenType.IDENTIFIER)) return new Variable(Previous());
             if (Match(TokenType.LEFT_PAREN))
             {
