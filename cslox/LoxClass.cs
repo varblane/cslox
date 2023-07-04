@@ -3,10 +3,12 @@
     internal class LoxClass : ICallable
     {
         internal readonly string name;
+        internal readonly LoxClass? superclass;
         private readonly Dictionary<string, LoxFunction> methods;
 
-        internal LoxClass(string name, Dictionary<string, LoxFunction> methods)
+        internal LoxClass(string name, LoxClass? superclass, Dictionary<string, LoxFunction> methods)
         {
+            this.superclass = superclass;
             this.name = name;
             this.methods = methods;
         }
@@ -39,6 +41,10 @@
             if (methods.ContainsKey(name))
             {
                 return methods[name];
+            }
+            if (superclass != null)
+            {
+                return superclass.FindMethod(name);
             }
             return null;
         }

@@ -3,7 +3,7 @@
     internal class Interpreter : IExprVisitor<object?>, IStmtVisitor<object?>
     {
         internal readonly Environment globals;
-        private Environment environment;
+        private Environment? environment;
         private readonly Dictionary<Expr, int> locals;
 
         internal Interpreter()
@@ -46,7 +46,7 @@
         {
             if (locals.TryGetValue(expr, out var distance))
             {
-                return environment.GetAt(distance, name.lexeme);
+                return environment?.GetAt(distance, name.lexeme);
             }
             return globals.Get(name);
         }
@@ -171,7 +171,7 @@
             var value = Evaluate(expr.value);
             if (locals.TryGetValue(expr, out var distance))
             {
-                environment.AssignAt(distance, expr.name, value);
+                environment?.AssignAt(distance, expr.name, value);
             }
             else
             {
@@ -205,6 +205,19 @@
         public object? VisitThisExpr(This expr)
         {
             return LookUpvariable(expr.keyword, expr);
+        }
+
+        public object? VisitSuperExpr(Super expr)
+        {
+            var distance = locals[expr];
+            var superclass = (LoxClass?)environment?.GetAt(distance, "super");
+            var obj = (LoxInstance?)environment?.GetAt(distance - 1, "this");
+            var method = superclass?.FindMethod(expr.method.lexeme);
+            if (method == null)
+            {
+                throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'.");
+            }
+            return method?.Bind(obj);
         }
 
         private static bool IsEqual(object a, object b)
@@ -258,7 +271,7 @@
             {
                 value = Evaluate(stmt.initializer);
             }
-            environment.Define(stmt.name.lexeme, value);
+            environment?.Define(stmt.name.lexeme, value);
             return null;
         }
 
@@ -293,7 +306,7 @@
         public object? VisitFunctionStmt(Function stmt)
         {
             var function = new LoxFunction(stmt, environment, false);
-            environment.Define(stmt.name.lexeme, function);
+            environment?.Define(stmt.name.lexeme, function);
             return null;
         }
 
@@ -306,7 +319,21 @@
 
         public object? VisitClassStmt(Class stmt)
         {
-            environment.Define(stmt.name.lexeme, null);
+            object? superclass = null;
+            if (stmt.superclass != null)
+            {
+                superclass = Evaluate(stmt.superclass);
+                if (!(superclass is LoxClass))
+                {
+                    throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+                }
+            }
+            environment?.Define(stmt.name.lexeme, null);
+            if (stmt.superclass != null)
+            {
+                environment = new Environment(environment);
+                environment.Define("super", superclass);
+            }
             var methods = new Dictionary<string, LoxFunction>();
             foreach (var method in stmt.methods)
             {
@@ -320,8 +347,12 @@
                     methods.Add(method.name.lexeme, function);
                 }
             }
-            var klass = new LoxClass(stmt.name.lexeme, methods);
-            environment.Assign(stmt.name, klass);
+            var klass = new LoxClass(stmt.name.lexeme, (LoxClass?)superclass, methods);
+            if (superclass != null)
+            {
+                environment = environment?.enclosing;
+            }
+            environment?.Assign(stmt.name, klass);
             return null;
         }
 

@@ -39,6 +39,12 @@
         private Stmt ClassDeclaration()
         {
             var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+            Variable? superclass = null;
+            if (Match(TokenType.LESS))
+            {
+                Consume(TokenType.IDENTIFIER, "Expect superclass name.");
+                superclass = new Variable(Previous());
+            }
             Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
             var methods = new List<Function>();
             while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
@@ -46,7 +52,7 @@
                 methods.Add(Function("method"));
             }
             Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
-            return new Class(name, methods);
+            return new Class(name, superclass, methods);
         }
 
         private Function Function(string kind)
@@ -352,6 +358,13 @@
             if (Match(TokenType.TRUE)) return new Literal(true);
             if (Match(TokenType.NIL)) return new Literal(null);
             if (Match(TokenType.NUMBER, TokenType.STRING)) return new Literal(Previous().literal);
+            if (Match(TokenType.SUPER))
+            {
+                var keyword = Previous();
+                Consume(TokenType.DOT, "Expext '.' after 'super'.");
+                var method = Consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+                return new Super(keyword, method);
+            }
             if (Match(TokenType.THIS)) return new This(Previous());
             if (Match(TokenType.IDENTIFIER)) return new Variable(Previous());
             if (Match(TokenType.LEFT_PAREN))

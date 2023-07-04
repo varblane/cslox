@@ -3,10 +3,10 @@
     internal class LoxFunction : ICallable
     {
         private readonly Function declaration;
-        private readonly Environment closure;
+        private readonly Environment? closure;
         private readonly bool isInitializer;
 
-        internal LoxFunction(Function declaration, Environment closure, bool isInitializer)
+        internal LoxFunction(Function declaration, Environment? closure, bool isInitializer)
         {
             this.declaration = declaration;
             this.closure = closure;
@@ -31,14 +31,14 @@
             }
             catch (ReturnException returnValue)
             {
-                if (isInitializer) return closure.GetAt(0, "this");
+                if (isInitializer) return closure?.GetAt(0, "this");
                 return returnValue.value;
             }
-            if (isInitializer) return closure.GetAt(0, "this");
+            if (isInitializer) return closure?.GetAt(0, "this");
             return null;
         }
 
-        internal LoxFunction Bind(LoxInstance instance)
+        internal LoxFunction Bind(LoxInstance? instance)
         {
             var environment = new Environment(closure);
             environment.Define("this", instance);

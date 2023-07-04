@@ -1,5 +1,5 @@
 ﻿Block      : List<Stmt?> statements
-Class      : Token name, List<Function> methods
+Class      : Token name, Variable? superclass, List<Function> methods
 Expression : Expr expression
 Function   : Token name, List<Token> pars, List<Stmt?> body
 If         : Expr condition, Stmt thenBranch, Stmt? elseBranch

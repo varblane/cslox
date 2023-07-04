@@ -10,7 +10,7 @@
             enclosing = null;
         }
 
-        internal Environment(Environment enclosing)
+        internal Environment(Environment? enclosing)
         {
             this.enclosing = enclosing;
         }

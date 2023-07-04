@@ -171,6 +171,20 @@
             return null;
         }
 
+        public object? VisitSuperExpr(Super expr)
+        {
+            if (currentClass == ClassType.None)
+            {
+                Lox.Error(expr.keyword, "Can't use 'super' outside of a class.");
+            }
+            else if (currentClass != ClassType.Subclass)
+            {
+                Lox.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+            }
+            ResolveLocal(expr, expr.keyword);
+            return null;
+        }
+
         public object? VisitPrintStmt(Print stmt)
         {
             Resolve(stmt.expression);
@@ -258,6 +272,20 @@
             currentClass = ClassType.Class;
             Declare(stmt.name);
             Define(stmt.name);
+            if (stmt.superclass != null && stmt.name.lexeme.Equals(stmt.superclass.name.lexeme))
+            {
+                Lox.Error(stmt.superclass.name, "A class can't inherit from itself.");
+            }
+            if (stmt.superclass != null)
+            {
+                currentClass = ClassType.Subclass;
+                Resolve(stmt.superclass);
+            }
+            if (stmt.superclass != null)
+            {
+                BeginScope();
+                scopes.Peek().Add("super", true);
+            }
             BeginScope();
             scopes.Peek().Add("this", true);
             foreach (var method in stmt.methods)
@@ -270,6 +298,7 @@
                 ResolveFuntion(method, declaration);
             }
             EndScope();
+            if (stmt.superclass != null) EndScope();
             currentClass = enclosingClass;
             return null;
         }
@@ -287,6 +316,7 @@
     {
         None,
         Class,
+        Subclass,
     }
 
 }

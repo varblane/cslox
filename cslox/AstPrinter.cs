@@ -76,5 +76,10 @@ namespace cslox
         {
             return Parenthesize("this");
         }
+
+        public string VisitSuperExpr(Super expr)
+        {
+            return Parenthesize("super");
+        }
     }
 }
