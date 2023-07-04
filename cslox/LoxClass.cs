@@ -34,11 +34,11 @@
             return name;
         }
 
-        internal LoxFunction? FindMethod(string lexeme)
+        internal LoxFunction? FindMethod(string name)
         {
-            if (methods.ContainsKey(lexeme))
+            if (methods.ContainsKey(name))
             {
-                return methods[lexeme];
+                return methods[name];
             }
             return null;
         }
