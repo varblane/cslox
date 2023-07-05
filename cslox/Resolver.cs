@@ -199,7 +199,7 @@
             }
             if (stmt.value != null)
             {
-                if (currentFunction != FunctionType.Initializer)
+                if (currentFunction == FunctionType.Initializer)
                 {
                     Lox.Error(stmt.keyword, "Can't return a value from an initializer.");
                 }
